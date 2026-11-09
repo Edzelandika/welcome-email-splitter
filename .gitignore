@@ -3,3 +3,7 @@ __pycache__/
 *.py[cod]
 *.xlsx
 .welcome-split-*/
+windows/.venv/
+windows/build/
+windows/dist/
+windows/*.spec

@@ -1,0 +1,31 @@
+name: Build Windows portable app
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['windows/**', 'split_emails.py', 'test_splitter.py', '.github/workflows/windows.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - run: python -m pip install -r windows/requirements.txt
+      - run: python -m unittest -v test_splitter.py
+      - run: python -m PyInstaller --noconfirm --clean --onefile --windowed --collect-all tkinterdnd2 --paths . --name "Welcome Email Splitter" --distpath windows/dist --workpath windows/build --specpath windows windows/app.py
+      - name: Verify packaged app launches with drag and drop
+        shell: pwsh
+        run: |
+          $app = Start-Process -FilePath 'windows/dist/Welcome Email Splitter.exe' -ArgumentList '--smoke-test' -PassThru
+          if (-not $app.WaitForExit(60000)) { $app.Kill(); throw 'App launch timed out' }
+          if ($app.ExitCode -ne 0) { throw "App launch failed: $($app.ExitCode)" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Welcome-Email-Splitter-Windows
+          path: windows/dist/Welcome Email Splitter.exe
+          if-no-files-found: error
